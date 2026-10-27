@@ -1,0 +1,1248 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rhythm Pie</title>
+
+<style>
+:root {
+  --ink: #202b45;
+  --muted: #65718a;
+  --panel: #ffffff;
+  --bg: #f3f6fc;
+  --accent: #5368d9;
+  --accent-light: #e9edff;
+  --border: #dce3f0;
+  --active-grey: #9299a5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px;
+  color: var(--ink);
+  background: var(--bg);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+main {
+  max-width: 1100px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  margin: 16px 0;
+  box-shadow: 0 5px 20px #23345b0b;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+
+label {
+  display: block;
+  font-weight: 650;
+  margin-bottom: 7px;
+}
+
+select,
+input[type="range"],
+button {
+  width: 100%;
+}
+
+select,
+button {
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: white;
+  color: var(--ink);
+}
+
+button {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+button.primary {
+  color: white;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+button:hover {
+  filter: brightness(.97);
+}
+
+.small {
+  font-size: .88rem;
+  color: var(--muted);
+}
+
+#bpmValue {
+  color: var(--accent);
+  font-weight: 750;
+}
+
+.beat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.beat-column {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 8px;
+  background: #fbfcff;
+  text-align: center;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.beat-column.active {
+  border: 2px solid var(--accent);
+  background: var(--accent-light);
+}
+
+.beat-column.playing {
+  box-shadow: 0 0 0 3px #5368d92b;
+}
+
+.beat-title {
+  font-weight: 750;
+  margin-bottom: 8px;
+}
+
+.pie {
+  display: block;
+  width: min(100%, 145px);
+  margin: 0 auto 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.actions button {
+  flex: 1 1 130px;
+}
+
+.status {
+  min-height: 1.5em;
+  color: var(--muted);
+  margin-top: 12px;
+}
+
+/* Active note indicator: grey */
+.pie-slice {
+  transition:
+    fill 60ms ease,
+    filter 60ms ease,
+    stroke-width 60ms ease;
+}
+
+.pie-slice.active {
+  fill: var(--active-grey) !important;
+  stroke: #505762 !important;
+  stroke-width: 3px !important;
+  filter: drop-shadow(0 0 3px #777f8b);
+}
+
+.reference-intro {
+  line-height: 1.55;
+  color: var(--muted);
+  font-size: .94rem;
+}
+
+.ref-table-wrap {
+  overflow-x: auto;
+}
+
+.ref-table {
+  width: 100%;
+  min-width: 790px;
+  border-collapse: collapse;
+  margin-top: 14px;
+  font-size: .9rem;
+}
+
+.ref-table th,
+.ref-table td {
+  border: 1px solid var(--border);
+  padding: 12px 10px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ref-table th {
+  background: #f1f4fc;
+}
+
+.ref-table tbody tr:nth-child(even) {
+  background: #fafbff;
+}
+
+.ref-table .center {
+  text-align: center;
+}
+
+.table-pie {
+  width: 72px;
+  height: 72px;
+  display: block;
+  margin: auto;
+}
+
+.ref-notation {
+  width: 135px;
+  min-width: 135px;
+  text-align: center !important;
+}
+
+.ref-notation svg {
+  width: 125px;
+  max-width: 100%;
+  height: 55px;
+  display: block;
+  margin: auto;
+}
+
+.kind {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--accent-light);
+  color: #3547a6;
+  font-size: .77rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.kind.unequal {
+  background: #fff1d8;
+  color: #865500;
+}
+
+.kind.equal {
+  background: #e5f7ed;
+  color: #17653e;
+}
+
+.duration {
+  white-space: normal;
+  line-height: 1.5;
+}
+
+.duration-bar {
+  display: block;
+  width: 125px;
+  max-width: 100%;
+  height: 22px;
+  margin: 7px auto 0;
+}
+
+.note-explain {
+  font-size: .8rem;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.legend span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: .82rem;
+  color: var(--muted);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #14203b88;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10;
+}
+
+.modal-backdrop.open {
+  display: flex;
+}
+
+.modal {
+  background: white;
+  border-radius: 18px;
+  width: min(1000px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 22px;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.modal-head h2 {
+  margin: 0;
+}
+
+.modal-head button {
+  width: auto;
+}
+
+@media (max-width: 650px) {
+  body {
+    padding: 12px;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+
+  .beat-grid {
+    gap: 6px;
+  }
+
+  .beat-column {
+    padding: 8px 3px;
+  }
+
+  .beat-title {
+    font-size: .84rem;
+  }
+
+  .beat-hint {
+    font-size: .68rem;
+  }
+}
+</style>
+</head>
+
+<body>
+<main>
+  <header>
+    <h1>🥧 Rhythm Pie</h1>
+    <p class="subtitle">
+      Explore rhythm by hearing it, seeing it, and dividing the beat.
+    </p>
+    <p>What is rhythm? Think of rhythm as the heartbeat of music! It's how we organise sounds into patterns of long and short notes. Just like your heart beats steadily, music uses rhythm to help us tap our feet, clap, and dance. 
+    </p>
+    <p>Built with AI</p>
+  </header>
+
+  <section class="panel">
+    <div class="controls">
+      <div>
+        <label for="timeSignature">Time signature</label>
+        <select id="timeSignature">
+          <option value="4">4/4</option>
+          <option value="3">3/4</option>
+          <option value="6">6/8</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="bpm">
+          Tempo: <span id="bpmValue">80</span> BPM
+        </label>
+        <input id="bpm" type="range" min="40" max="180" value="80">
+      </div>
+
+      <div>
+        <label for="sliceStyle">Subdivision style</label>
+        <select id="sliceStyle">
+          <option value="equal">Equal subdivisions</option>
+          <option value="unequal">Unequal note patterns</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="small">
+      Click a beat column to cycle through its available subdivisions.
+      The active pie slice turns grey while its note plays.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>Beat explorer</h2>
+
+    <div id="beatGrid" class="beat-grid"></div>
+
+    <div class="actions">
+      <button class="primary" id="playBtn">▶ Play rhythm</button>
+      <button id="stopBtn">■ Stop</button>
+      <button id="resetBtn">Reset pattern</button>
+      <button id="referenceBtn">Open full reference table</button>
+    </div>
+
+    <div id="status" class="status" aria-live="polite">
+      Ready to play.
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Rhythm reference</h2>
+
+    <p class="reference-intro">
+      Each pie represents one beat. Slice sizes show the relative duration
+      of each note. A dotted note lasts one-and-a-half times as long as
+      its undotted equivalent.
+    </p>
+
+    <div class="legend">
+      <span>
+        <i class="legend-dot" style="background:#5368d9"></i>
+        Equal-duration pattern
+      </span>
+      <span>
+        <i class="legend-dot" style="background:#d28a18"></i>
+        Unequal-duration pattern
+      </span>
+      <span>
+        <i class="legend-dot" style="background:#9299a5"></i>
+        Note currently playing
+      </span>
+    </div>
+
+    <div id="referenceTable"></div>
+  </section>
+</main>
+
+<div
+  id="modalBackdrop"
+  class="modal-backdrop"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modalTitle"
+>
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Rhythm Reference Table</h2>
+      <button id="closeModal" aria-label="Close reference table">
+        Close ✕
+      </button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const equalPatterns = {
+  1: {
+    ratios: [1],
+    name: "Crotchet (quarter note)",
+    values: "1 beat",
+    detail: "One note lasting the full beat.",
+    type: "standard"
+  },
+
+  2: {
+    ratios: [1/2, 1/2],
+    name: "Two quavers (eighth notes)",
+    values: "½ + ½ beat",
+    detail: "Two equal notes in one beat.",
+    type: "standard"
+  },
+
+  3: {
+    ratios: [1/3, 1/3, 1/3],
+    name: "Triplet",
+    values: "⅓ + ⅓ + ⅓ beat",
+    detail: "Three evenly spaced notes in one beat.",
+    type: "triplet"
+  },
+
+  4: {
+    ratios: [1/4, 1/4, 1/4, 1/4],
+    name: "Four semiquavers (16th notes)",
+    values: "¼ beat each",
+    detail: "Four equal notes in one beat.",
+    type: "standard"
+  },
+
+  8: {
+    ratios: Array(8).fill(1/8),
+    name: "Eight demisemiquavers (32nd notes)",
+    values: "⅛ beat each",
+    detail: "Eight equal notes in one beat.",
+    type: "standard"
+  }
+};
+
+const unequalPatterns = {
+  1: {
+    ratios: [1],
+    name: "Crotchet (quarter note)",
+    values: "1 beat",
+    detail: "One note lasting the full beat.",
+    type: "standard"
+  },
+
+  2: {
+    ratios: [3/4, 1/4],
+    name: "Dotted quaver + semiquaver",
+    values: "¾ + ¼ beat",
+    detail:
+      "A dotted eighth note followed by a sixteenth note.",
+    type: "dotted"
+  },
+
+  3: {
+    ratios: [1/2, 1/4, 1/4],
+    name: "Quaver + 2 semiquavers",
+    values: "½ + ¼ + ¼ beat",
+    detail:
+      "One eighth note followed by two sixteenth notes.",
+    type: "standard"
+  },
+
+  4: {
+    ratios: [3/8, 1/8, 1/8, 3/8],
+    name: "Dotted semiquaver pattern",
+    values: "⅜ + ⅛ + ⅛ + ⅜ beat",
+    detail:
+      "A dotted sixteenth, two thirty-seconds, and another dotted sixteenth.",
+    type: "standard"
+  },
+
+  8: {
+    ratios: [
+      1/4, 1/16, 1/8, 1/8,
+      1/8, 1/8, 1/8, 1/16
+    ],
+    name: "Mixed short-note pattern",
+    values: "¼ + ¹⁄₁₆ + ⅛ + ⅛ + ⅛ + ⅛ + ⅛ + ¹⁄₁₆ beat",
+    detail:
+      "A mixed pattern of note durations. The pie shows their relative lengths.",
+    type: "mixed"
+  }
+};
+
+const state = {
+  subdivisions: [1, 1, 1, 1],
+  currentBeat: -1,
+  playing: false,
+  timer: null,
+  audioContext: null,
+  nextRevision: 0,
+  activeTimers: new Set()
+};
+
+const $ = id => document.getElementById(id);
+const beatGrid = $("beatGrid");
+
+function getBeatCount() {
+  return Number($("timeSignature").value);
+}
+
+function getPattern(divisions, style = $("sliceStyle").value) {
+  const source = style === "unequal" ? unequalPatterns : equalPatterns;
+  return source[divisions] || equalPatterns[1];
+}
+
+function normalizeRatios(ratios) {
+  const total = ratios.reduce((sum, value) => sum + value, 0);
+  return ratios.map(value => value / total);
+}
+
+function piePath(cx, cy, radius, startAngle, endAngle) {
+  const x1 = cx + radius * Math.cos(startAngle);
+  const y1 = cy + radius * Math.sin(startAngle);
+  const x2 = cx + radius * Math.cos(endAngle);
+  const y2 = cy + radius * Math.sin(endAngle);
+  const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+
+  return `M ${cx} ${cy}
+    L ${x1} ${y1}
+    A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}
+    Z`;
+}
+
+/*
+ * Important fix:
+ * A single ratio of 1 must be drawn as a circle.
+ * A full SVG arc whose start and end points are identical can render empty.
+ */
+function buildPieSlices(ratios, uid) {
+  const normalized = normalizeRatios(ratios);
+
+  const colors = [
+    "#5368d9",
+    "#e49a37",
+    "#27a17a",
+    "#df627d",
+    "#8a67c7",
+    "#46a8c7",
+    "#b0a13a",
+    "#6d7b95"
+  ];
+
+  /* Explicit full-circle path for a crotchet / single note. */
+  if (normalized.length === 1) {
+    return `
+      <circle
+        class="pie-slice"
+        data-slice="${uid}-0"
+        cx="50"
+        cy="50"
+        r="46"
+        fill="${colors[0]}"
+        stroke="#ffffff"
+        stroke-width="2"
+      >
+        <title>One full beat</title>
+      </circle>
+    `;
+  }
+
+  let angle = -Math.PI / 2;
+  let result = "";
+
+  normalized.forEach((ratio, index) => {
+    const end = angle + ratio * Math.PI * 2;
+
+    result += `
+      <path
+        class="pie-slice"
+        data-slice="${uid}-${index}"
+        d="${piePath(50, 50, 46, angle, end)}"
+        fill="${colors[index % colors.length]}"
+        stroke="#ffffff"
+        stroke-width="2"
+      >
+        <title>
+          Slice ${index + 1}: ${(ratio * 100).toFixed(1)}% of one beat
+        </title>
+      </path>
+    `;
+
+    angle = end;
+  });
+
+  result += `
+    <circle
+      cx="50"
+      cy="50"
+      r="46"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="1.5"
+      pointer-events="none"
+    />
+  `;
+
+  return result;
+}
+
+function dottedQuaverNotation() {
+  return `
+    <svg viewBox="0 0 130 62"
+      role="img"
+      aria-label="Dotted quaver followed by a semiquaver">
+      <g fill="none" stroke="#202b45" stroke-linecap="round">
+        <line x1="29" y1="42" x2="29" y2="13" stroke-width="2.5"/>
+        <line x1="67" y1="42" x2="67" y2="13" stroke-width="2.5"/>
+        <line x1="29" y1="14" x2="67" y2="14" stroke-width="3.5"/>
+        <line x1="29" y1="20" x2="67" y2="20" stroke-width="2.5"/>
+      </g>
+      <g fill="#202b45">
+        <ellipse cx="24" cy="42" rx="6.2" ry="4.2"
+          transform="rotate(-22 24 42)"/>
+        <ellipse cx="62" cy="42" rx="6.2" ry="4.2"
+          transform="rotate(-22 62 42)"/>
+        <circle cx="37" cy="39" r="2.2"/>
+      </g>
+    </svg>
+  `;
+}
+
+function durationBar(ratios) {
+  const normalized = normalizeRatios(ratios);
+  const width = 116;
+  let x = 2;
+  let shapes = "";
+
+  normalized.forEach((ratio, index) => {
+    const segmentWidth = Math.max(1, ratio * width - 1);
+
+    shapes += `
+      <rect x="${x}" y="4"
+        width="${segmentWidth}" height="13" rx="1.5"
+        fill="${index % 2 ? "#d28a18" : "#5368d9"}">
+        <title>
+          Note ${index + 1}: ${(ratio * 100).toFixed(2)}% of one beat
+        </title>
+      </rect>
+    `;
+
+    x += ratio * width;
+  });
+
+  return `
+    <svg class="duration-bar" viewBox="0 0 120 22"
+      role="img" aria-label="Proportional note-duration diagram">
+      ${shapes}
+      <line x1="2" y1="20" x2="118" y2="20"
+        stroke="#9aa6bd" stroke-width="1"/>
+    </svg>
+  `;
+}
+
+function simpleNotation(pattern, divisions) {
+  if (pattern.type === "dotted") {
+    return dottedQuaverNotation();
+  }
+
+  if (pattern.type === "mixed") {
+    return durationBar(pattern.ratios);
+  }
+
+  if (divisions === 1) {
+    return `
+      <svg viewBox="0 0 100 62" role="img" aria-label="Quarter note">
+        <ellipse cx="40" cy="43" rx="7" ry="5"
+          fill="#202b45" transform="rotate(-22 40 43)"/>
+        <line x1="46" y1="42" x2="46" y2="10"
+          stroke="#202b45" stroke-width="2.5"/>
+      </svg>
+    `;
+  }
+
+  if (divisions === 3 && pattern.ratios[0] === 1/2) {
+    return `
+      <svg viewBox="0 0 130 62"
+        role="img" aria-label="Quaver followed by two semiquavers">
+        <g fill="none" stroke="#202b45" stroke-linecap="round">
+          <line x1="22" y1="42" x2="22" y2="13" stroke-width="2.5"/>
+          <line x1="55" y1="42" x2="55" y2="13" stroke-width="2.5"/>
+          <line x1="86" y1="42" x2="86" y2="13" stroke-width="2.5"/>
+          <line x1="22" y1="14" x2="86" y2="14" stroke-width="3.5"/>
+          <line x1="55" y1="20" x2="86" y2="20" stroke-width="2.5"/>
+        </g>
+        <g fill="#202b45">
+          <ellipse cx="17" cy="42" rx="6.2" ry="4.2"
+            transform="rotate(-22 17 42)"/>
+          <ellipse cx="50" cy="42" rx="6.2" ry="4.2"
+            transform="rotate(-22 50 42)"/>
+          <ellipse cx="81" cy="42" rx="6.2" ry="4.2"
+            transform="rotate(-22 81 42)"/>
+        </g>
+      </svg>
+    `;
+  }
+
+  if (divisions === 4 && pattern.ratios[0] === 3/8) {
+    return `
+      <svg viewBox="0 0 130 62"
+        role="img" aria-label="Unequal four-note pattern">
+        <g fill="none" stroke="#202b45" stroke-linecap="round">
+          <line x1="18" y1="42" x2="18" y2="13" stroke-width="2.5"/>
+          <line x1="47" y1="42" x2="47" y2="13" stroke-width="2.5"/>
+          <line x1="76" y1="42" x2="76" y2="13" stroke-width="2.5"/>
+          <line x1="105" y1="42" x2="105" y2="13" stroke-width="2.5"/>
+          <line x1="18" y1="14" x2="105" y2="14" stroke-width="3.5"/>
+          <line x1="18" y1="20" x2="105" y2="20" stroke-width="2.5"/>
+          <line x1="18" y1="26" x2="105" y2="26" stroke-width="2"/>
+        </g>
+        <g fill="#202b45">
+          <ellipse cx="13" cy="42" rx="5.5" ry="4"
+            transform="rotate(-22 13 42)"/>
+          <ellipse cx="42" cy="42" rx="5.5" ry="4"
+            transform="rotate(-22 42 42)"/>
+          <ellipse cx="71" cy="42" rx="5.5" ry="4"
+            transform="rotate(-22 71 42)"/>
+          <ellipse cx="100" cy="42" rx="5.5" ry="4"
+            transform="rotate(-22 100 42)"/>
+          <circle cx="25" cy="39" r="2"/>
+          <circle cx="112" cy="39" r="2"/>
+        </g>
+      </svg>
+    `;
+  }
+
+  /* Equal subdivisions */
+  const count = divisions;
+  const spacing = 100 / count;
+  let notes = "";
+
+  for (let i = 0; i < count; i++) {
+    const x = 9 + i * spacing;
+
+    notes += `
+      <ellipse cx="${x}" cy="43" rx="4.7" ry="3.5"
+        transform="rotate(-22 ${x} 43)" fill="#202b45"/>
+      <line x1="${x + 4}" y1="42" x2="${x + 4}" y2="13"
+        stroke="#202b45" stroke-width="2"/>
+    `;
+  }
+
+  const first = 13;
+  const last = 13 + (count - 1) * spacing;
+
+  let beams = `
+    <line x1="${first + 4}" y1="14" x2="${last + 4}" y2="14"
+      stroke="#202b45" stroke-width="3"/>
+  `;
+
+  if (count >= 4) {
+    beams += `
+      <line x1="${first + 4}" y1="20" x2="${last + 4}" y2="20"
+        stroke="#202b45" stroke-width="2"/>
+    `;
+  }
+
+  if (count >= 8) {
+    beams += `
+      <line x1="${first + 4}" y1="25" x2="${last + 4}" y2="25"
+        stroke="#202b45" stroke-width="2"/>
+    `;
+  }
+
+  const triplet = count === 3
+    ? `<text x="50" y="9" text-anchor="middle"
+         font-size="10" fill="#202b45">3</text>`
+    : "";
+
+  return `
+    <svg viewBox="0 0 120 62" role="img"
+      aria-label="${count} equal notes">
+      ${notes}${beams}${triplet}
+    </svg>
+  `;
+}
+
+const referenceExamples = [
+  { divisions: 1, style: "equal" },
+  { divisions: 2, style: "equal" },
+  { divisions: 2, style: "unequal" },
+  { divisions: 3, style: "equal" },
+  { divisions: 3, style: "unequal" },
+  { divisions: 4, style: "equal" },
+  { divisions: 4, style: "unequal" },
+  { divisions: 8, style: "equal" },
+  { divisions: 8, style: "unequal" }
+];
+
+function renderReferenceTable() {
+  const rows = referenceExamples.map((item, index) => {
+    const patterns = item.style === "unequal"
+      ? unequalPatterns
+      : equalPatterns;
+
+    const pattern = patterns[item.divisions];
+    const notation = simpleNotation(pattern, item.divisions);
+    const kindClass = item.style === "unequal" ? "unequal" : "equal";
+    const kindLabel = item.style === "unequal" ? "Unequal" : "Equal";
+
+    return `
+      <tr>
+        <td class="center">${item.divisions}</td>
+
+        <td class="center">
+          <svg class="table-pie" viewBox="0 0 100 100"
+            role="img" aria-label="${pattern.name} pie diagram">
+            ${buildPieSlices(pattern.ratios, "ref-" + index)}
+          </svg>
+        </td>
+
+        <td class="ref-notation">${notation}</td>
+
+        <td>
+          <strong>${pattern.name}</strong>
+          <div class="note-explain">${pattern.detail}</div>
+        </td>
+
+        <td class="duration">${pattern.values}</td>
+
+        <td>
+          <span class="kind ${kindClass}">${kindLabel}</span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  return `
+    <p class="reference-intro">
+      Durations are fractions of one beat. The dotted-quaver example
+      includes its dot beside the first notehead. Pie slices show
+      proportional note lengths.
+    </p>
+
+    <div class="ref-table-wrap">
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th>Divisions</th>
+            <th class="center">Pie</th>
+            <th class="center">Notation / rhythm diagram</th>
+            <th>Pattern</th>
+            <th>Duration within one beat</th>
+            <th>Type</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderBeatGrid() {
+  const count = getBeatCount();
+
+  while (state.subdivisions.length < count) {
+    state.subdivisions.push(1);
+  }
+
+  state.subdivisions = state.subdivisions.slice(0, count);
+
+  beatGrid.style.gridTemplateColumns =
+    `repeat(${count}, minmax(0, 1fr))`;
+
+  beatGrid.innerHTML = state.subdivisions.map((divisions, index) => {
+    const pattern = getPattern(divisions);
+
+    return `
+      <div
+        class="beat-column ${state.currentBeat === index ? "playing" : ""}"
+        data-beat="${index}"
+        role="button"
+        tabindex="0"
+        aria-label="Beat ${index + 1}, ${pattern.name}. Click to change subdivision."
+      >
+        <div class="beat-title">Beat ${index + 1}</div>
+
+        <svg class="pie" viewBox="0 0 100 100" aria-hidden="true">
+          ${buildPieSlices(pattern.ratios, "beat-" + index)}
+        </svg>
+
+        <div class="beat-note">
+          ${simpleNotation(pattern, divisions)}
+        </div>
+
+        <div class="beat-hint">
+          ${divisions} ${divisions === 1 ? "note" : "notes"}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  beatGrid.querySelectorAll(".beat-column").forEach(column => {
+    const change = () => {
+      if (state.playing) stopPlayback();
+
+      const index = Number(column.dataset.beat);
+      const options = [1, 2, 3, 4, 8];
+      const currentIndex = options.indexOf(state.subdivisions[index]);
+
+      state.subdivisions[index] =
+        options[(currentIndex + 1) % options.length];
+
+      renderBeatGrid();
+    };
+
+    column.addEventListener("click", change);
+
+    column.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        change();
+      }
+    });
+  });
+}
+
+function highlightPieSlice(beatIndex, sliceIndex, revision) {
+  if (!state.playing || revision !== state.nextRevision) {
+    return;
+  }
+
+  const svg = document.querySelector(
+    `[data-slice="beat-${beatIndex}-0"]`
+  )?.closest("svg");
+
+  if (svg) {
+    svg.querySelectorAll(".pie-slice.active").forEach(slice => {
+      slice.classList.remove("active");
+    });
+  }
+
+  const activeSlice = document.querySelector(
+    `[data-slice="beat-${beatIndex}-${sliceIndex}"]`
+  );
+
+  if (activeSlice) {
+    activeSlice.classList.add("active");
+  }
+}
+
+function clearActiveSlices() {
+  document.querySelectorAll(".pie-slice.active").forEach(slice => {
+    slice.classList.remove("active");
+  });
+}
+
+function clearScheduledTimers() {
+  state.activeTimers.forEach(timer => clearTimeout(timer));
+  state.activeTimers.clear();
+}
+
+function scheduleTrackedTimeout(callback, delay) {
+  const timer = setTimeout(() => {
+    state.activeTimers.delete(timer);
+    callback();
+  }, delay);
+
+  state.activeTimers.add(timer);
+  return timer;
+}
+
+function stopPlayback() {
+  state.playing = false;
+  state.currentBeat = -1;
+  state.nextRevision++;
+
+  if (state.timer) {
+    clearTimeout(state.timer);
+  }
+
+  state.timer = null;
+  clearScheduledTimers();
+  clearActiveSlices();
+  renderBeatGrid();
+
+  $("status").textContent = "Playback stopped.";
+}
+
+async function playTone(
+  frequency = 880,
+  duration = 0.07,
+  gainValue = 0.12
+) {
+  const AudioContextClass =
+    window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContextClass) {
+    $("status").textContent =
+      "Web Audio is not supported in this browser.";
+    return;
+  }
+
+  if (!state.audioContext) {
+    state.audioContext = new AudioContextClass();
+  }
+
+  if (state.audioContext.state === "suspended") {
+    await state.audioContext.resume();
+  }
+
+  const oscillator = state.audioContext.createOscillator();
+  const gain = state.audioContext.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.value = frequency;
+
+  gain.gain.setValueAtTime(
+    gainValue,
+    state.audioContext.currentTime
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    state.audioContext.currentTime + duration
+  );
+
+  oscillator.connect(gain);
+  gain.connect(state.audioContext.destination);
+
+  oscillator.start();
+  oscillator.stop(state.audioContext.currentTime + duration);
+}
+
+function playCurrentBeat(beatIndex, revision) {
+  if (!state.playing || revision !== state.nextRevision) {
+    return;
+  }
+
+  const count = getBeatCount();
+
+  if (beatIndex >= count) {
+    beatIndex = 0;
+  }
+
+  state.currentBeat = beatIndex;
+  renderBeatGrid();
+
+  const bpm = Number($("bpm").value);
+  const beatDuration = 60000 / bpm;
+  const pattern = getPattern(state.subdivisions[beatIndex]);
+  const durations = normalizeRatios(pattern.ratios)
+    .map(ratio => ratio * beatDuration);
+
+  let offset = 0;
+
+  durations.forEach((duration, sliceIndex) => {
+    const delay = offset;
+    const isFirst = sliceIndex === 0;
+
+    scheduleTrackedTimeout(() => {
+      if (!state.playing || revision !== state.nextRevision) {
+        return;
+      }
+
+      playTone(
+        isFirst ? 880 : 620,
+        0.065,
+        isFirst ? 0.15 : 0.09
+      );
+
+      highlightPieSlice(beatIndex, sliceIndex, revision);
+
+      scheduleTrackedTimeout(() => {
+        if (revision !== state.nextRevision) {
+          return;
+        }
+
+        const activeSlice = document.querySelector(
+          `[data-slice="beat-${beatIndex}-${sliceIndex}"]`
+        );
+
+        if (activeSlice) {
+          activeSlice.classList.remove("active");
+        }
+      }, Math.max(35, duration - 10));
+    }, delay);
+
+    offset += duration;
+  });
+
+  state.timer = setTimeout(() => {
+    if (state.playing && revision === state.nextRevision) {
+      playCurrentBeat(beatIndex + 1, revision);
+    }
+  }, beatDuration);
+}
+
+function startPlayback() {
+  stopPlayback();
+
+  state.playing = true;
+  const revision = ++state.nextRevision;
+
+  $("status").textContent =
+    `Playing at ${$("bpm").value} BPM in ${getBeatCount()}/4.`;
+
+  playCurrentBeat(0, revision);
+}
+
+function resetPattern() {
+  stopPlayback();
+
+  state.subdivisions = Array(getBeatCount()).fill(1);
+  state.currentBeat = -1;
+
+  renderBeatGrid();
+
+  $("status").textContent = "Pattern reset.";
+}
+
+function showReferenceModal() {
+  $("modalContent").innerHTML = renderReferenceTable();
+  $("modalBackdrop").classList.add("open");
+}
+
+function closeReferenceModal() {
+  $("modalBackdrop").classList.remove("open");
+}
+
+$("timeSignature").addEventListener("change", () => {
+  stopPlayback();
+  state.subdivisions = Array(getBeatCount()).fill(1);
+  renderBeatGrid();
+});
+
+$("bpm").addEventListener("input", () => {
+  $("bpmValue").textContent = $("bpm").value;
+});
+
+$("sliceStyle").addEventListener("change", () => {
+  if (state.playing) stopPlayback();
+  renderBeatGrid();
+});
+
+$("playBtn").addEventListener("click", startPlayback);
+$("stopBtn").addEventListener("click", stopPlayback);
+$("resetBtn").addEventListener("click", resetPattern);
+$("referenceBtn").addEventListener("click", showReferenceModal);
+$("closeModal").addEventListener("click", closeReferenceModal);
+
+$("modalBackdrop").addEventListener("click", event => {
+  if (event.target === $("modalBackdrop")) {
+    closeReferenceModal();
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeReferenceModal();
+  }
+});
+
+$("referenceTable").innerHTML = renderReferenceTable();
+renderBeatGrid();
+</script>
+</body>
+</html>
