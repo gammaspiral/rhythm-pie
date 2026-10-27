@@ -1,2 +1,4 @@
 # rhythm-pie
-Rhythm Pie
+
+Rhythm Pie. Built with AI
+https://gammaspiral.github.io/rhythm-pie/
